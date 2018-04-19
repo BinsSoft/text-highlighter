@@ -1,6 +1,7 @@
-# Multi Image Upload 
+# Text Highlighter
 
-Text Highlighter
+Select any text and highlight them with multiple colors
+
 
 ## Installation
 
@@ -32,16 +33,16 @@ and for styling `text-highlighter.min.css` or `text-highlighter.css`
 	});
 
 ## Description of options
-	`get all selected items` 	: selector.getAllItems()
+	`get all selected items` : selector.getAllItems()
 
-	`set Color Codes` 			: selector.setItem({
-										'Green' : { 'color' : "#14c917" },
-										'Red' : { 'color' : "#ff0000" },
-										'Blue' : { 'color' : "#225fe2" },
-										...
-									});
+	`set Color Codes` : selector.setItem({
+						'Green' : { 'color' : "#14c917" },
+						'Red' : { 'color' : "#ff0000" },
+						'Blue' : { 'color' : "#225fe2" },
+						...
+					});
 	
-	`reset`						: selector.reset()
+	`reset`	 : selector.reset()
 
 
 
