@@ -1,6 +1,7 @@
-# Multi Image Upload 
+# Text Highlighter
 
-Text Highlighter
+Select any text and highlight them with multiple colors
+
 
 ## Installation
 
