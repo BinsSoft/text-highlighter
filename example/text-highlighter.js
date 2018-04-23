@@ -51,8 +51,8 @@ class TextSelector {
 						.appendTo(topHeader);
 		const topHeaderRight = $("<div/>")
 						.addClass('select-header-top-right')
+						.addClass('hide-icon')
 						.appendTo(topHeader);
-		this.randerButtons(topHeaderRight);
 		
 		
 		const buttomHeader = $("<div/>")
@@ -85,23 +85,9 @@ class TextSelector {
 		}
 		header.find('label').first().trigger('click');
 	}
-	randerButtons(topHeaderRight)
-	{
-		const exportBtn  = $("<button/>")
-							.addClass('btn')
-							.addClass('btn-export')
-							.text('Export')
-							.bind('click',{obj:this},this.exportItems)
-							.appendTo(topHeaderRight)
-		const resetBtn  = $("<button/>")
-							.addClass('btn')
-							.addClass('btn-reset')
-							.text('Reset')
-							.bind('click',{obj:this},this.reset)
-							.appendTo(topHeaderRight)
-	}
+	
 	toggleIconList(event) {
-		$(event.target).toggleClass('hide-icon');
+		$(event.target).parents('.select-header-top').find('.select-header-top-right').toggleClass('hide-icon');
 		var classObj = event.data.obj;
 		classObj.selector.find('.select-header').find('.select-header-buttom').slideToggle('slow');
 	}
@@ -121,25 +107,31 @@ class TextSelector {
 	removeStyle(event) {
 		var classObj = event.data.obj;
 		var wrap = $(event.target).parent();
-		var text = wrap.text().trim();
+		wrap.find('i.cross').remove();
+		var text = wrap.html().trim();
 		wrap.replaceWith(text);
 		classObj.getSelectedItems(classObj);
 	}
 
 
-	
-	splitNode(obj, node,  limit) {
-	  var parentHtml = node.outerHTML.trim();
-	  var childHtml = limit.outerHTML.trim();
-	  var leftPart = parentHtml.substr(0, parentHtml.indexOf(childHtml));
-	  var rightPart = parentHtml.substr(leftPart.length+childHtml.length, parentHtml.length);
-	  var wrapHtml = leftPart+'<i class="cross cross-icon" ></i></span>';
-	  wrapHtml += childHtml;
-	  wrapHtml += '<span style="'+$(node).attr('style')+'" class="'+$(node).attr('class')+'">';
-	  wrapHtml += rightPart;
-	  $(node).replaceWith($(wrapHtml));
-	  $(obj.selector).find('i.cross').bind('click',{obj:obj}, obj.removeStyle);
+	wraper(range,current)
+	{
+		var wrapper = document.createElement("span");
+    	wrapper.setAttribute('style',current.color);
+    	wrapper.setAttribute('class',current.class);
+    	if(typeof range == 'object'){
+	    	range.surroundContents(wrapper);
+	    } else {
+	    	wrapper.innerHTML = range;
+	    }
+    	var cross = document.createElement('i');
+    	cross.setAttribute('class',"cross cross-icon");
+    	wrapper.appendChild(cross);
+    	//$(wrapper).find('i.cross')
+    	//this.getSelectedItems(this)
+    	return wrapper;
 	}
+
 	getSelectedItems(obj){
 		obj.selectedItems = [];
 		obj.selector.find('.select-body').find('span').each(function(index,item){
@@ -149,6 +141,25 @@ class TextSelector {
 			})
 		})
 	}
+
+
+	splitNode(obj, node) {
+	  var childHtml = node.childNodes[1];
+	  var leftPart =  node.childNodes[0].data;
+	  var rightPart = node.childNodes[2].data;
+	  var current = {
+	  	color : $(node).attr('style'),
+	  	class : $(node).attr('class')
+	  }
+	  var div = document.createElement('div');
+	  div.appendChild(obj.wraper(leftPart,current));
+	  div.appendChild(childHtml)
+	  div.appendChild(obj.wraper(rightPart,current));
+	  $(node).replaceWith(div.innerHTML);
+	  $(obj.selector).find('i.cross').bind('click',{obj:obj}, obj.removeStyle);
+	}
+	
+	
 	highlighted(event) {
 		var obj = event.data.obj;
 		var sel, range, node;
@@ -157,27 +168,16 @@ class TextSelector {
 	        if (sel.getRangeAt && sel.rangeCount) {
 	            range = window.getSelection().getRangeAt(0);
 	            if(range.startOffset != range.endOffset && range.toString().trim()!=''){
-	            	var currentColor = obj.selector.find('.select-header-buttom').find('label.active').find('span').attr('style');
-	            	var currentClass = obj.selector.find('.select-header-buttom').find('label.active').find('span').attr('data-selector');
-	            	const selectedText = range.toString();
-    	            var html = `<span style="`+currentColor+`" class="`+currentClass+`" >`
-    	            				+range
-    	            				+`<i class="cross cross-icon" ></i>`
-    	            			+`</span>`;
-    	            range.deleteContents();
-    	            var el = document.createElement("div");
-    	            el.innerHTML = html;
-    	            var frag = document.createDocumentFragment(), node, lastNode;
-    	            while ( (node = el.firstChild) ) {
-
-    	            	lastNode = frag.appendChild(node);
-    	            }
-    	            $(lastNode).find('i.cross').bind('click', {obj:obj} ,obj.removeStyle);
-    	            range.insertNode(frag);
-    	            obj.getSelectedItems(obj)
+	            	let span = obj.selector.find('.select-header-buttom').find('label.active').find('span');
+	            	var current = {
+	            		color : span.attr('style'),
+	            		class : span.attr('data-selector')
+	            	}
+	            	
+	            	obj.wraper(range,current)
+    	            $(obj.selector).find('i.cross').bind('click',{obj:obj}, obj.removeStyle);
     	            if($(range.commonAncestorContainer).prop("tagName") == 'SPAN') {
-        	            obj.splitNode(obj, range.commonAncestorContainer, range.commonAncestorContainer.firstElementChild);
-        	            obj.getSelectedItems(obj)
+        	            obj.splitNode(obj, range.commonAncestorContainer);
         	        }
     	        }
 	        }
@@ -186,8 +186,14 @@ class TextSelector {
 	        range.collapse(false);
 	        range.pasteHTML(html);
 	    }
+	    obj.clearSelection();
 	}
 
+	clearSelection()
+	{
+	 if (window.getSelection) {window.getSelection().removeAllRanges();}
+	 else if (document.selection) {document.selection.empty();}
+	}
 	exportItems(event)
 	{
 		const classObj = event.data.obj;
