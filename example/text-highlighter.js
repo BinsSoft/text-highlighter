@@ -30,7 +30,7 @@ class TextSelector {
 	renderSelectorBody()
 	{
 		this.selector.addClass('text-highlighter');
-		let content = this.selector.html().trim();
+		let content = this.selector.html();
 		this.selector.empty();
 		$("<div/>")
 		.addClass('select-body')
@@ -39,6 +39,12 @@ class TextSelector {
 		.appendTo(this.selector)
 	}
 	renderSelectorIcon() {
+		if (this.options.items != undefined && Object.keys(this.options.items).length > 0) {
+			this.selector.show();
+		} else {
+			this.selector.hide();
+			return false;
+		}
 		const header = $("<div/>")
 					.addClass('select-header')
 					.prependTo(this.selector);
@@ -83,6 +89,8 @@ class TextSelector {
 				.appendTo(l);
 			l.append(i);
 		}
+		
+
 		header.find('label').first().trigger('click');
 	}
 	
@@ -108,9 +116,11 @@ class TextSelector {
 		var classObj = event.data.obj;
 		var wrap = $(event.target).parent();
 		wrap.find('i.cross').remove();
-		var text = wrap.html().trim();
-		wrap.replaceWith(text);
-		classObj.getSelectedItems(classObj);
+		var text = wrap.html();
+		if (text){
+			wrap.replaceWith(text);
+			classObj.getSelectedItems(classObj);
+		}
 	}
 
 
@@ -128,25 +138,42 @@ class TextSelector {
     	cross.setAttribute('class',"cross cross-icon");
     	wrapper.appendChild(cross);
     	//$(wrapper).find('i.cross')
-    	//this.getSelectedItems(this)
+    	this.getSelectedItems(this)
     	return wrapper;
 	}
 
 	getSelectedItems(obj){
 		obj.selectedItems = [];
-		obj.selector.find('.select-body').find('span').each(function(index,item){
-			obj.selectedItems.push({
-				text : $(item).text(),
-				item : $(item).attr('class')
-			})
-		})
+		var totalText = obj.selector.find('.select-body').html();
+		var newElement = $("<div/>").html(totalText);
+		newElement.find("i").remove();
+		var str = newElement.html()
+		str = str.replace(new RegExp('<br>', 'g'), ' ');
+		newElement.html(str);
+		var childNodes = newElement[0].childNodes;
+		var startPoint = 0;
+		for(let child of childNodes) {
+			startPoint += (child.innerText)? child.innerText.length : child.length;
+			if(child.nodeName == 'SPAN') {
+				obj.selectedItems.push({
+					text : child.innerText,
+					item : child.classList[0],
+					start : (startPoint - child.innerText.length) ,
+					length : child.innerText.length
+				})
+			}
+		}
+		
 	}
 
 
 	splitNode(obj, node) {
-	  var childHtml = node.childNodes[1];
-	  var leftPart =  node.childNodes[0].data;
-	  var rightPart = node.childNodes[2].data;
+
+	  $(node).find('i').last().remove();
+	  var nodeInnerHtml = node.innerHTML;
+	  var leftPart = nodeInnerHtml.substr(0, nodeInnerHtml.indexOf('<span'));
+	  var childHtml = $(node).find('span')[0];
+	  var rightPart = nodeInnerHtml.substr(nodeInnerHtml.indexOf('</span>')+7);
 	  var current = {
 	  	color : $(node).attr('style'),
 	  	class : $(node).attr('class')
@@ -177,7 +204,7 @@ class TextSelector {
 	            	obj.wraper(range,current)
     	            $(obj.selector).find('i.cross').bind('click',{obj:obj}, obj.removeStyle);
     	            if($(range.commonAncestorContainer).prop("tagName") == 'SPAN') {
-        	            obj.splitNode(obj, range.commonAncestorContainer);
+    	            	obj.splitNode(obj, range.commonAncestorContainer);
         	        }
     	        }
 	        }
@@ -208,12 +235,13 @@ class TextSelector {
 	{
 		return this.selectedItems;
 	}
-	reset(event)
+	reset()
 	{
-		const obj =  event.data.obj;
-		obj.selector.find('.select-body').find('span').each(function(index,item){
+		this.selector.find('.select-body').find('span').each(function(index,item){
 			var wrap = $(item);
-			var text = wrap.text().trim();
+			wrap.find('i').remove();
+			var text = wrap.html();
+
 			wrap.replaceWith(text);
 		})
 	}
